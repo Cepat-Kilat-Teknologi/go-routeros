@@ -98,6 +98,54 @@ if err != nil {
 }
 ```
 
+## API Protocol (v6 & v7)
+
+For the TCP-based API Protocol (port 8728/8729), use the `api` package:
+
+```go
+import "github.com/Cepat-Kilat-Teknologi/go-routeros/api"
+
+client, err := api.Dial("192.168.88.1", "admin", "")
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+
+reply, err := client.Print(context.Background(), "/ip/address",
+    api.WithProplist("address", "interface"),
+)
+```
+
+### Which package to use?
+
+| Your RouterOS version | Package | Why |
+|---|---|---|
+| v6 | `api` | REST API not available in v6 |
+| v7 (simple CRUD) | `rest` | Simpler HTTP-based API |
+| v7 (advanced) | `api` | More powerful filtering, future streaming support |
+
+### API Client Options
+
+| Option | Description | Default |
+|---|---|---|
+| `WithTLS(true)` | Enable TLS (port 8729) | `false` |
+| `WithTLSConfig(cfg)` | Custom TLS config | `nil` |
+| `WithTimeout(d)` | Connection timeout | No timeout |
+
+### API Error Handling
+
+```go
+reply, err := client.Print(ctx, "/ip/address")
+if err != nil {
+    if de, ok := err.(*api.DeviceError); ok {
+        fmt.Printf("Trap category %d: %s\n", de.Category, de.Message)
+    }
+    if fe, ok := err.(*api.FatalError); ok {
+        fmt.Printf("Fatal: %s (connection closed)\n", fe.Message)
+    }
+}
+```
+
 ## Migration from routerosv7-restfull-api
 
 ```go
