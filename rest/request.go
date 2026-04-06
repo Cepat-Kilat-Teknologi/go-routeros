@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -55,11 +54,9 @@ func createRequestBody(payload []byte) io.Reader {
 	return nil
 }
 
-// closeResponseBody closes the response body, logging any error.
+// closeResponseBody closes the response body, discarding any error.
 func closeResponseBody(body io.ReadCloser) {
-	if err := body.Close(); err != nil {
-		log.Println(err)
-	}
+	_ = body.Close()
 }
 
 // validateRequestConfig checks that the URL and HTTP method in config are valid.

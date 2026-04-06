@@ -1,16 +1,13 @@
 package rest
 
 import (
-	"log"
 	"net"
 	"strings"
 )
 
-// closeConnection closes a network connection, logging any error.
+// closeConnection closes a network connection, discarding any error.
 func closeConnection(conn net.Conn) {
-	if err := conn.Close(); err != nil {
-		log.Println(err)
-	}
+	_ = conn.Close()
 }
 
 // determineProtocolFromURL extracts the protocol from a URL string.
