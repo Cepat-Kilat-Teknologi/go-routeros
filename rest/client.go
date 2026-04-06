@@ -1,4 +1,4 @@
-// rest/client.go
+// Package rest provides a client for the MikroTik RouterOS v7 REST API.
 package rest
 
 import (

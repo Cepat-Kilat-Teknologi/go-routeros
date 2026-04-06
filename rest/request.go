@@ -141,31 +141,3 @@ func sendRequest(httpClient *http.Client, request *http.Request, config requestC
 	return response, err
 }
 
-// makeRequest executes an HTTP request and returns the decoded JSON response.
-// Returns *APIError for non-2xx responses.
-func makeRequest(ctx context.Context, config requestConfig, insecureSkipVerify bool) (interface{}, error) {
-	if err := validateRequestConfig(config); err != nil {
-		return nil, err
-	}
-
-	protocol := determineProtocolFromURL(config.URL)
-	httpClient := createHTTPClient(protocol, insecureSkipVerify)
-	requestBody := createRequestBody(config.Payload)
-
-	request, err := createRequest(ctx, config.Method, config.URL, requestBody, config.Username, config.Password)
-	if err != nil {
-		return nil, fmt.Errorf("makeRequest: request creation failed: %w", err)
-	}
-
-	response, err := sendRequest(httpClient, request, config)
-	if err != nil {
-		return nil, err
-	}
-	defer closeResponseBody(response.Body)
-
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return nil, parseAPIError(response)
-	}
-
-	return decodeJSONBody(response.Body)
-}

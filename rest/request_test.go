@@ -3,7 +3,6 @@ package rest
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -120,65 +119,6 @@ func TestCreateHTTPClient_HTTPS_Insecure(t *testing.T) {
 func TestCreateHTTPClient_HTTP(t *testing.T) {
 	client := createHTTPClient(httpProtocol, false)
 	assert.Nil(t, client.Transport)
-}
-
-func TestMakeRequest_Success(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	}))
-	defer server.Close()
-
-	result, err := makeRequest(context.Background(), requestConfig{
-		URL:    server.URL,
-		Method: "GET",
-	}, false)
-
-	require.NoError(t, err)
-	data, ok := result.(map[string]interface{})
-	require.True(t, ok)
-	assert.Equal(t, "ok", data["status"])
-}
-
-func TestMakeRequest_APIError(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error":   404,
-			"message": "Not Found",
-			"detail":  "no such command",
-		})
-	}))
-	defer server.Close()
-
-	_, err := makeRequest(context.Background(), requestConfig{
-		URL:    server.URL,
-		Method: "GET",
-	}, false)
-
-	require.Error(t, err)
-	apiErr, ok := err.(*APIError)
-	require.True(t, ok)
-	assert.Equal(t, 404, apiErr.StatusCode)
-	assert.Equal(t, "Not Found", apiErr.Message)
-	assert.Equal(t, "no such command", apiErr.Detail)
-}
-
-func TestMakeRequest_InvalidURL(t *testing.T) {
-	_, err := makeRequest(context.Background(), requestConfig{
-		URL:    "invalid_url",
-		Method: "GET",
-	}, false)
-	assert.Error(t, err)
-}
-
-func TestMakeRequest_InvalidMethod(t *testing.T) {
-	_, err := makeRequest(context.Background(), requestConfig{
-		URL:    "https://example.com",
-		Method: "INVALID",
-	}, false)
-	assert.Error(t, err)
 }
 
 type mockErrorReadCloser struct{}
