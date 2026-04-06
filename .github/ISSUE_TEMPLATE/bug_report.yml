@@ -1,0 +1,70 @@
+name: Bug Report
+description: Report a bug in go-routeros
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please fill out the form below.
+
+  - type: input
+    id: go-version
+    attributes:
+      label: Go Version
+      description: Output of `go version`
+      placeholder: "go1.21.0 linux/amd64"
+    validations:
+      required: true
+
+  - type: input
+    id: library-version
+    attributes:
+      label: Library Version
+      description: Version of go-routeros (e.g., v0.1.0)
+      placeholder: "v0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package is affected?
+      options:
+        - rest (REST API)
+        - api (API Protocol)
+        - api/proto (Wire Protocol)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: routeros-version
+    attributes:
+      label: RouterOS Version
+      description: Version of RouterOS on the device
+      placeholder: "7.14.3"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal code or steps to reproduce the issue
+      render: go
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Output
+      description: Any error messages or logs
+      render: text
