@@ -14,6 +14,7 @@ import (
 type ClientOption func(*Client)
 
 // Client holds connection configuration and credentials for a RouterOS device.
+// A Client is safe for concurrent use by multiple goroutines.
 type Client struct {
 	host               string
 	username           string

@@ -23,6 +23,9 @@ type clientConfig struct {
 }
 
 // Client holds a connection to a RouterOS device.
+// A Client is NOT safe for concurrent use by multiple goroutines.
+// Each Client maintains a single TCP connection; concurrent commands
+// require separate Client instances.
 type Client struct {
 	conn   net.Conn
 	reader *proto.Reader
