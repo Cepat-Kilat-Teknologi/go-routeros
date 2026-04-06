@@ -243,23 +243,11 @@ func (c *Client) readReply() (*Reply, error) {
 func (c *Client) execute(ctx context.Context, command string, params map[string]string, opts ...RequestOption) (*Reply, error) {
 	reqOpts := collectRequestOptions(opts...)
 
-	// Set deadline from context if present
+	// Set deadline from context if present.
+	// This handles both context.WithTimeout and context.WithDeadline.
 	if deadline, ok := ctx.Deadline(); ok {
 		c.conn.SetDeadline(deadline)
 		defer c.conn.SetDeadline(time.Time{}) // reset after request
-	}
-
-	// Handle context cancellation
-	if ctx.Done() != nil {
-		done := make(chan struct{})
-		defer close(done)
-		go func() {
-			select {
-			case <-ctx.Done():
-				c.conn.SetDeadline(time.Now()) // force timeout
-			case <-done:
-			}
-		}()
 	}
 
 	if err := c.sendCommand(command, params, reqOpts); err != nil {

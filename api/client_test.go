@@ -762,3 +762,4 @@ func TestClient_ContextDeadline(t *testing.T) {
 	assert.Len(t, reply.Re, 1)
 	client.Close()
 }
+
