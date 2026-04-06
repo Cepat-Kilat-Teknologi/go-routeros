@@ -1,4 +1,3 @@
-// api/proto/reader.go
 package proto
 
 import (

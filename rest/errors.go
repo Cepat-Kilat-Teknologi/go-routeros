@@ -1,4 +1,3 @@
-// rest/errors.go
 package rest
 
 import (

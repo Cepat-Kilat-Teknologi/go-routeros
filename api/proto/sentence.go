@@ -1,4 +1,4 @@
-// api/proto/sentence.go
+// Package proto implements the MikroTik RouterOS API Protocol wire format.
 package proto
 
 import "strings"

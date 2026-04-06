@@ -1,4 +1,3 @@
-// rest/request.go
 package rest
 
 import (
@@ -23,17 +22,20 @@ type requestConfig struct {
 	Password string
 }
 
+// isValidURL checks whether the given string is a valid HTTP or HTTPS URL.
 func isValidURL(urlStr string) bool {
 	parsedURL, err := url.Parse(urlStr)
 	return err == nil && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https")
 }
 
+// isValidHTTPMethod checks whether the given string is a supported HTTP method.
 func isValidHTTPMethod(method string) bool {
 	return method == http.MethodGet || method == http.MethodPost ||
 		method == http.MethodPut || method == http.MethodPatch ||
 		method == http.MethodDelete
 }
 
+// parseURL parses a raw URL string into a *url.URL.
 func parseURL(rawURL string) (*url.URL, error) {
 	if rawURL == "invalid_url" {
 		return nil, errors.New("invalid URL")
@@ -45,6 +47,7 @@ func parseURL(rawURL string) (*url.URL, error) {
 	return parsedURL, nil
 }
 
+// createRequestBody returns an io.Reader for the given payload, or nil if empty.
 func createRequestBody(payload []byte) io.Reader {
 	if len(payload) > 0 {
 		return bytes.NewBuffer(payload)
@@ -52,12 +55,14 @@ func createRequestBody(payload []byte) io.Reader {
 	return nil
 }
 
+// closeResponseBody closes the response body, logging any error.
 func closeResponseBody(body io.ReadCloser) {
 	if err := body.Close(); err != nil {
 		log.Println(err)
 	}
 }
 
+// validateRequestConfig checks that the URL and HTTP method in config are valid.
 func validateRequestConfig(config requestConfig) error {
 	if !isValidURL(config.URL) {
 		return fmt.Errorf("makeRequest: invalid URL: %s", config.URL)
@@ -82,6 +87,7 @@ func createHTTPClient(protocol string, insecureSkipVerify bool) *http.Client {
 	return client
 }
 
+// decodeJSONBody reads and decodes a JSON response body.
 func decodeJSONBody(body io.ReadCloser) (interface{}, error) {
 	var responseData interface{}
 	if err := json.NewDecoder(body).Decode(&responseData); err != nil {
@@ -90,16 +96,19 @@ func decodeJSONBody(body io.ReadCloser) (interface{}, error) {
 	return responseData, nil
 }
 
+// setRequestAuth sets basic authentication on the request if credentials are provided.
 func setRequestAuth(request *http.Request, username, password string) {
 	if username != "" || password != "" {
 		request.SetBasicAuth(username, password)
 	}
 }
 
+// setRequestContentType sets the Content-Type header to application/json.
 func setRequestContentType(request *http.Request) {
 	request.Header.Set("Content-Type", "application/json")
 }
 
+// newHTTPRequest creates an HTTP request with context, auth, and content type.
 func newHTTPRequest(ctx context.Context, method, url string, body io.Reader, username, password string) (
 	*http.Request, error,
 ) {
@@ -112,6 +121,7 @@ func newHTTPRequest(ctx context.Context, method, url string, body io.Reader, use
 	return request, nil
 }
 
+// createRequest validates the URL and method, then builds an HTTP request.
 func createRequest(
 	ctx context.Context, method, rawURL string, body io.Reader, username, password string,
 ) (*http.Request, error) {
@@ -125,6 +135,7 @@ func createRequest(
 	return newHTTPRequest(ctx, method, parsedURL.String(), body, username, password)
 }
 
+// retryTlsErrorRequest retries a failed HTTPS request over plain HTTP.
 func retryTlsErrorRequest(httpClient *http.Client, request *http.Request, config requestConfig) (
 	*http.Response, error,
 ) {
@@ -133,6 +144,7 @@ func retryTlsErrorRequest(httpClient *http.Client, request *http.Request, config
 	return httpClient.Do(request)
 }
 
+// sendRequest executes the request and retries over HTTP on TLS failure.
 func sendRequest(httpClient *http.Client, request *http.Request, config requestConfig) (*http.Response, error) {
 	response, err := httpClient.Do(request)
 	if err != nil && shouldRetryTlsErrorRequest(err, request.URL.Scheme) {

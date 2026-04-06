@@ -1,4 +1,3 @@
-// rest/protocol.go
 package rest
 
 import (

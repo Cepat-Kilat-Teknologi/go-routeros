@@ -1,4 +1,3 @@
-// api/proto/writer.go
 package proto
 
 import (
