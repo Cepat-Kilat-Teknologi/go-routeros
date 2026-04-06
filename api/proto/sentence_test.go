@@ -83,3 +83,17 @@ func TestSentence_GetPair(t *testing.T) {
 	_, ok = s.Get("nonexistent")
 	assert.False(t, ok)
 }
+
+func TestParseWord_EqualPrefixNoValue(t *testing.T) {
+	// "=key" without a second "=" should return (key, "")
+	k, v := ParseWord("=key")
+	assert.Equal(t, "key", k)
+	assert.Equal(t, "", v)
+}
+
+func TestParseWord_DotPrefixNoEquals(t *testing.T) {
+	// ".proplist" without "=" should return (".proplist", "")
+	k, v := ParseWord(".proplist")
+	assert.Equal(t, ".proplist", k)
+	assert.Equal(t, "", v)
+}

@@ -147,6 +147,85 @@ func TestReadSentence_EOF(t *testing.T) {
 	assert.ErrorIs(t, err, io.EOF)
 }
 
+func TestReadLength_Truncated2Byte(t *testing.T) {
+	// First byte indicates 2-byte length (0x80-0xBF), but no second byte
+	r := NewReader(bytes.NewReader([]byte{0x80}))
+	_, err := r.readLength()
+	assert.Error(t, err)
+}
+
+func TestReadLength_Truncated3Byte(t *testing.T) {
+	// First byte indicates 3-byte length (0xC0-0xDF), but only 1 extra byte follows
+	r := NewReader(bytes.NewReader([]byte{0xC0, 0x40}))
+	_, err := r.readLength()
+	assert.Error(t, err)
+}
+
+func TestReadLength_Truncated4Byte(t *testing.T) {
+	// First byte indicates 4-byte length (0xE0-0xEF), but only 2 extra bytes follow
+	r := NewReader(bytes.NewReader([]byte{0xE0, 0x20, 0x00}))
+	_, err := r.readLength()
+	assert.Error(t, err)
+}
+
+func TestReadLength_Truncated5Byte(t *testing.T) {
+	// First byte indicates 5-byte length (0xF0), but only 3 extra bytes follow
+	r := NewReader(bytes.NewReader([]byte{0xF0, 0x10, 0x00, 0x00}))
+	_, err := r.readLength()
+	assert.Error(t, err)
+}
+
+func TestReadLength_UnexpectedByte(t *testing.T) {
+	// 0xF8 falls into the default case (reserved/unexpected)
+	r := NewReader(bytes.NewReader([]byte{0xF8}))
+	_, err := r.readLength()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unexpected length byte")
+}
+
+func TestReadWord_TruncatedContent(t *testing.T) {
+	// Length says 10 bytes but only 3 bytes of content follow
+	data := []byte{0x0A, 'a', 'b', 'c'}
+	r := NewReader(bytes.NewReader(data))
+	_, err := r.readWord()
+	assert.Error(t, err)
+}
+
+func TestReadSentence_ErrorMidWord(t *testing.T) {
+	// Build a sentence that has the first word ok, then a word whose content is truncated
+	// First word: "!re" (length 3, then 3 bytes, then we need another word with error)
+	var buf bytes.Buffer
+	buf.WriteByte(0x03) // length 3
+	buf.WriteString("!re")
+	buf.WriteByte(0x0A) // length 10 but we provide only 3 bytes
+	buf.WriteString("abc")
+	r := NewReader(&buf)
+	_, err := r.ReadSentence()
+	assert.Error(t, err)
+}
+
+func TestReadSentence_ErrorWhileSkippingEmpty(t *testing.T) {
+	// First word is empty (zero-length), then EOF when trying to read next word
+	var buf bytes.Buffer
+	buf.WriteByte(0x00) // empty first word
+	// No more data — next readWord will hit EOF
+	r := NewReader(&buf)
+	_, err := r.ReadSentence()
+	assert.Error(t, err)
+}
+
+func TestReadSentence_SkipEmptySentences(t *testing.T) {
+	// Write empty words (zero-length terminators) before the actual sentence
+	var buf bytes.Buffer
+	buf.WriteByte(0x00) // empty word (causes skip in first-word loop)
+	buf.WriteByte(0x00) // another empty word
+	buf.Write(buildSentence("!done"))
+	r := NewReader(&buf)
+	s, err := r.ReadSentence()
+	require.NoError(t, err)
+	assert.Equal(t, "!done", s.Word)
+}
+
 func TestRoundTrip_WriteThenRead(t *testing.T) {
 	var buf bytes.Buffer
 	w := NewWriter(&buf)

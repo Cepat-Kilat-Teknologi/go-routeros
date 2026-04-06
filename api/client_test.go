@@ -2,7 +2,12 @@ package api
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"math/big"
 	"net"
 	"testing"
 	"time"
@@ -379,6 +384,293 @@ func TestResolveAddress_DefaultTLSPort(t *testing.T) {
 func TestResolveAddress_CustomPort(t *testing.T) {
 	addr := resolveAddress("192.168.88.1:9000", false)
 	assert.Equal(t, "192.168.88.1:9000", addr)
+}
+
+func TestDial_RealTCPServer(t *testing.T) {
+	// Start a local TCP listener that simulates RouterOS login
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer ln.Close()
+
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		r := proto.NewReader(conn)
+		w := proto.NewWriter(conn)
+		// Read login sentence
+		r.ReadSentence()
+		// Reply with !done (post-6.43 login)
+		w.BeginSentence()
+		w.WriteWord("!done")
+		w.EndSentence()
+	}()
+
+	client, err := Dial(ln.Addr().String(), "admin", "")
+	require.NoError(t, err)
+	client.Close()
+}
+
+func TestDial_RealTCPServer_WithTLS(t *testing.T) {
+	cert := generateSelfSignedCert(t)
+
+	tlsCfg := &tls.Config{Certificates: []tls.Certificate{cert}}
+	ln, err := tls.Listen("tcp", "127.0.0.1:0", tlsCfg)
+	require.NoError(t, err)
+	defer ln.Close()
+
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		r := proto.NewReader(conn)
+		w := proto.NewWriter(conn)
+		r.ReadSentence()
+		w.BeginSentence()
+		w.WriteWord("!done")
+		w.EndSentence()
+	}()
+
+	clientTLSCfg := &tls.Config{InsecureSkipVerify: true}
+	client, err := Dial(ln.Addr().String(), "admin", "", WithTLSConfig(clientTLSCfg))
+	require.NoError(t, err)
+	client.Close()
+}
+
+func TestDial_ConnectionRefused(t *testing.T) {
+	// Try to dial a port that is not listening
+	_, err := Dial("127.0.0.1:1", "admin", "", WithTimeout(100*time.Millisecond))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "routeros: dial")
+}
+
+func TestDial_TLS_NoConfig(t *testing.T) {
+	// Test Dial with useTLS=true but no tlsConfig (uses default empty tls.Config)
+	// This will fail to connect, but exercises the code path
+	_, err := Dial("127.0.0.1:1", "admin", "", WithTLS(true), WithTimeout(100*time.Millisecond))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "routeros: dial")
+}
+
+func TestLogin_FatalError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+	defer srv.close()
+
+	go func() {
+		srv.readSentence()
+		srv.writeSentence("!fatal", "=message=too many sessions")
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "")
+	err := client.login("admin", "")
+	require.Error(t, err)
+	_, ok := err.(*FatalError)
+	assert.True(t, ok)
+}
+
+func TestLogin_WriteError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+	// Close the connection before login to cause a write error
+	clientConn.Close()
+	srv.close()
+
+	client := newClientFromConn(clientConn, "admin", "")
+	err := client.login("admin", "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "login write")
+}
+
+func TestLogin_ReadError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+
+	go func() {
+		// Read the login sentence, then close without replying
+		srv.readSentence()
+		srv.close()
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "")
+	err := client.login("admin", "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "login read")
+}
+
+func TestLoginLegacy_InvalidHexChallenge(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+	defer srv.close()
+
+	go func() {
+		srv.readSentence()
+		// Send a challenge with invalid hex characters
+		srv.writeSentence("!done", "=ret=ZZZZ_not_hex")
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "secret")
+	err := client.login("admin", "secret")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "decode challenge")
+}
+
+func TestLoginLegacy_FatalError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+	defer srv.close()
+
+	go func() {
+		srv.readSentence()
+		// First reply with challenge to trigger legacy login
+		srv.writeSentence("!done", "=ret=abcdef0123456789")
+		// Read the legacy login response
+		srv.readSentence()
+		// Reply with fatal
+		srv.writeSentence("!fatal", "=message=session limit reached")
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "secret")
+	err := client.login("admin", "secret")
+	require.Error(t, err)
+	_, ok := err.(*FatalError)
+	assert.True(t, ok)
+}
+
+func TestLoginLegacy_TrapError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+	defer srv.close()
+
+	go func() {
+		srv.readSentence()
+		srv.writeSentence("!done", "=ret=abcdef0123456789")
+		srv.readSentence()
+		srv.writeSentence("!trap", "=category=2", "=message=wrong password")
+		srv.writeSentence("!done")
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "secret")
+	err := client.login("admin", "secret")
+	require.Error(t, err)
+	de, ok := err.(*DeviceError)
+	require.True(t, ok)
+	assert.Equal(t, 2, de.Category)
+}
+
+func TestLoginLegacy_WriteError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+
+	go func() {
+		srv.readSentence()
+		srv.writeSentence("!done", "=ret=abcdef0123456789")
+		// Close the server side so the legacy login write fails
+		time.Sleep(10 * time.Millisecond)
+		srv.close()
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "secret")
+	err := client.login("admin", "secret")
+	require.Error(t, err)
+}
+
+func TestLoginLegacy_ReadError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+
+	go func() {
+		srv.readSentence()
+		srv.writeSentence("!done", "=ret=abcdef0123456789")
+		srv.readSentence()
+		// Close without replying to cause read error
+		srv.close()
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "secret")
+	err := client.login("admin", "secret")
+	require.Error(t, err)
+}
+
+func TestExecute_SendCommandError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+
+	go func() {
+		srv.handleLogin()
+		srv.close()
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "")
+	require.NoError(t, client.login("admin", ""))
+
+	// Wait for server to close
+	time.Sleep(10 * time.Millisecond)
+
+	_, err := client.Print(context.Background(), "/ip/address")
+	require.Error(t, err)
+}
+
+func TestReadReply_ReadError(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+
+	go func() {
+		srv.handleLogin()
+		srv.readSentence()
+		// Send one !re, then close mid-reply (before !done)
+		srv.writeSentence("!re", "=.id=*1")
+		srv.close()
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "")
+	require.NoError(t, client.login("admin", ""))
+
+	_, err := client.Print(context.Background(), "/ip/address")
+	require.Error(t, err)
+}
+
+func TestDial_LoginFailureCloseConn(t *testing.T) {
+	// Test that Dial closes connection on login failure
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer ln.Close()
+
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		r := proto.NewReader(conn)
+		w := proto.NewWriter(conn)
+		r.ReadSentence()
+		w.BeginSentence()
+		w.WriteWord("!trap")
+		w.WriteWord("=category=5")
+		w.WriteWord("=message=bad creds")
+		w.EndSentence()
+		w.BeginSentence()
+		w.WriteWord("!done")
+		w.EndSentence()
+	}()
+
+	_, err = Dial(ln.Addr().String(), "admin", "wrong")
+	require.Error(t, err)
+}
+
+// generateSelfSignedCert creates a self-signed TLS certificate for testing.
+func generateSelfSignedCert(t *testing.T) tls.Certificate {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		DNSNames:     []string{"localhost"},
+		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1")},
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	return tls.Certificate{
+		Certificate: [][]byte{certDER},
+		PrivateKey:  key,
+	}
 }
 
 func TestClient_EmptyReply(t *testing.T) {
