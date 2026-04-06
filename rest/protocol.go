@@ -7,15 +7,6 @@ import (
 	"strings"
 )
 
-// determineProtocol determines the protocol to use for the request.
-// If the host is available on port 443, HTTPS is used, otherwise HTTP.
-func determineProtocol(host string) string {
-	if isHostAvailableOnPort(host, "443") {
-		return httpsProtocol
-	}
-	return httpProtocol
-}
-
 // closeConnection closes a network connection, logging any error.
 func closeConnection(conn net.Conn) {
 	if err := conn.Close(); err != nil {
