@@ -693,3 +693,26 @@ func TestClient_EmptyReply(t *testing.T) {
 	assert.NotNil(t, reply.Done)
 	client.Close()
 }
+
+func TestClient_EmptyReply_V718(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+
+	go func() {
+		defer srv.close()
+		srv.handleLogin()
+
+		srv.readSentence()
+		// RouterOS 7.18+ sends !empty before !done when no data
+		srv.writeSentence("!empty")
+		srv.writeSentence("!done")
+	}()
+
+	client := newClientFromConn(clientConn, "admin", "")
+	require.NoError(t, client.login("admin", ""))
+
+	reply, err := client.Print(context.Background(), "/ip/address")
+	require.NoError(t, err)
+	assert.Empty(t, reply.Re)
+	assert.NotNil(t, reply.Done)
+	client.Close()
+}

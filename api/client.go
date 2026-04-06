@@ -231,6 +231,8 @@ func (c *Client) readReply() (*Reply, error) {
 			trapErr = parseTrapError(sen)
 		case replyFatal:
 			return nil, parseFatalError(sen)
+		case replyEmpty:
+			// RouterOS 7.18+: no data to return, continue to !done
 		}
 	}
 }

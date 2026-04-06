@@ -8,4 +8,5 @@ const (
 	replyDone  = "!done"
 	replyTrap  = "!trap"
 	replyFatal = "!fatal"
+	replyEmpty = "!empty" // RouterOS 7.18+
 )
