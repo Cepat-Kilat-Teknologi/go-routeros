@@ -278,6 +278,64 @@ func TestClient_getHTTPClient_WithTimeout(t *testing.T) {
 	assert.Equal(t, 15*time.Second, httpClient.Timeout)
 }
 
+func TestClient_Execute_PostWithInvalidJSONPayload(t *testing.T) {
+	server := newTestServer(t, jsonHandler(200, map[string]string{"ok": "true"}))
+	defer server.Close()
+
+	c := NewClient(server.URL, "admin", "")
+	// Run uses POST; pass invalid JSON payload with a proplist option to trigger mergePayloadWithOptions error
+	_, err := c.Run(context.Background(), "test/command", []byte("not-valid-json"),
+		WithProplist("name"),
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to build request payload")
+}
+
+func TestClient_Execute_PutMethod(t *testing.T) {
+	server := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "PUT", r.Method)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	})
+	defer server.Close()
+
+	c := NewClient(server.URL, "admin", "")
+	payload, _ := json.Marshal(map[string]string{"key": "value"})
+	result, err := c.Add(context.Background(), "test/command", payload)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestClient_Execute_PatchMethod(t *testing.T) {
+	server := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "PATCH", r.Method)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	})
+	defer server.Close()
+
+	c := NewClient(server.URL, "admin", "")
+	payload, _ := json.Marshal(map[string]string{"key": "value"})
+	result, err := c.Set(context.Background(), "test/command", payload)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestClient_Execute_CreateRequestError(t *testing.T) {
+	// Use an invalid HTTP method to trigger createRequest error path
+	c := NewClient("http://127.0.0.1", "admin", "")
+	_, err := c.execute(context.Background(), "INVALID METHOD", "test", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "request creation failed")
+}
+
+func TestClient_Execute_SendRequestError(t *testing.T) {
+	// Point to a server that is not running to trigger sendRequest error
+	c := NewClient("http://127.0.0.1:1", "admin", "")
+	_, err := c.execute(context.Background(), MethodGet, "test", nil)
+	require.Error(t, err)
+}
+
 func TestClient_cleanHost(t *testing.T) {
 	tests := []struct {
 		input    string

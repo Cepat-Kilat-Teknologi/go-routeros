@@ -78,6 +78,15 @@ func TestMergePayloadWithOptions_ExistingPayload(t *testing.T) {
 	assert.Contains(t, string(result), `".proplist"`)
 }
 
+func TestMergePayloadWithOptions_InvalidJSON(t *testing.T) {
+	opts := &requestOptions{
+		proplist: []string{"name"},
+	}
+	_, err := mergePayloadWithOptions([]byte("not-valid-json"), opts)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to parse existing payload")
+}
+
 func TestMergePayloadWithOptions_NoOptions(t *testing.T) {
 	existing := []byte(`{"address":"10.0.0.1/24"}`)
 	opts := &requestOptions{}

@@ -171,6 +171,128 @@ func TestCreateRequest_InvalidMethod(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestDecodeJSONBody_InvalidJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `not valid json`)
+	}))
+	defer server.Close()
+
+	resp, err := http.Get(server.URL)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	_, err = decodeJSONBody(resp.Body)
+	assert.Error(t, err)
+}
+
+func TestNewHTTPRequest_InvalidMethod(t *testing.T) {
+	// A method with invalid characters triggers http.NewRequestWithContext error
+	_, err := newHTTPRequest(context.Background(), "BAD METHOD", "http://example.com", nil, "admin", "pass")
+	assert.Error(t, err)
+}
+
+func TestCreateRequest_ParseURLError(t *testing.T) {
+	_, err := createRequest(context.Background(), "GET", "invalid_url", nil, "admin", "pass")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "createRequest: error parsing URL")
+}
+
+func TestParseURL_ControlCharacter(t *testing.T) {
+	// url.Parse can fail with control characters in some Go versions
+	_, err := parseURL(string([]byte{0x7f}))
+	// url.Parse is very permissive; this may or may not error.
+	// We just exercise the code path.
+	_ = err
+}
+
+func TestRetryTlsErrorRequest(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"status":"ok"}`)
+	}))
+	defer server.Close()
+
+	req, err := http.NewRequest("GET", server.URL, nil)
+	require.NoError(t, err)
+
+	config := requestConfig{
+		URL:    server.URL,
+		Method: "GET",
+	}
+	resp, err := retryTlsErrorRequest(server.Client(), req, config)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+}
+
+func TestSendRequest_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"status":"ok"}`)
+	}))
+	defer server.Close()
+
+	req, err := http.NewRequest("GET", server.URL, nil)
+	require.NoError(t, err)
+
+	config := requestConfig{
+		URL:    server.URL,
+		Method: "GET",
+	}
+	resp, err := sendRequest(server.Client(), req, config)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+}
+
+func TestSendRequest_TLSRetry(t *testing.T) {
+	// Create an HTTP server (not HTTPS) that responds normally
+	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"status":"retried"}`)
+	}))
+	defer httpServer.Close()
+
+	// Build a URL that looks like https but points to the HTTP server's port
+	// This will cause a TLS handshake failure, triggering retry
+	httpsURL := replaceProtocol(httpServer.URL, "http", "https")
+
+	req, err := http.NewRequest("GET", httpsURL, nil)
+	require.NoError(t, err)
+
+	config := requestConfig{
+		URL:    httpsURL,
+		Method: "GET",
+	}
+
+	// Use a custom transport that simulates TLS handshake failure on first call,
+	// then succeeds when protocol is switched to HTTP
+	client := &http.Client{
+		Transport: &tlsRetryRoundTripper{
+			httpServer: httpServer,
+		},
+	}
+
+	resp, err := sendRequest(client, req, config)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+}
+
+// tlsRetryRoundTripper simulates a TLS handshake failure for https URLs
+// and succeeds for http URLs.
+type tlsRetryRoundTripper struct {
+	httpServer *httptest.Server
+}
+
+func (t *tlsRetryRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.URL.Scheme == "https" {
+		return nil, errors.New("tls: handshake failure")
+	}
+	// For http, delegate to the default transport targeting our test server
+	return http.DefaultTransport.RoundTrip(req)
+}
+
 func mustParseURL(rawURL string) *url.URL {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {

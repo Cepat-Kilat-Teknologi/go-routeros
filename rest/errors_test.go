@@ -3,6 +3,7 @@ package rest
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -76,6 +77,25 @@ func TestParseAPIError_EmptyBody(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, 500, apiErr.StatusCode)
 }
+
+func TestParseAPIError_ReadError(t *testing.T) {
+	resp := &http.Response{
+		StatusCode: 500,
+		Body:       &mockErrorReadCloserForErrors{},
+	}
+	err := parseAPIError(resp)
+	apiErr, ok := err.(*APIError)
+	require.True(t, ok)
+	assert.Equal(t, 500, apiErr.StatusCode)
+	assert.Contains(t, apiErr.Message, "failed to read response body")
+}
+
+type mockErrorReadCloserForErrors struct{}
+
+func (m *mockErrorReadCloserForErrors) Read(_ []byte) (int, error) {
+	return 0, errors.New("mocked read error")
+}
+func (m *mockErrorReadCloserForErrors) Close() error { return nil }
 
 func TestAPIError_JSONRoundTrip(t *testing.T) {
 	raw := `{"error":406,"message":"Not Acceptable","detail":"no such command or directory (remove)"}`

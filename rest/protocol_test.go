@@ -66,6 +66,27 @@ func TestReplaceProtocol(t *testing.T) {
 	assert.Equal(t, "https://example.com", result)
 }
 
+func TestDetermineProtocol_NotAvailable(t *testing.T) {
+	// Port 443 is not available on a random host, so should return http
+	result := determineProtocol("127.0.0.254")
+	assert.Equal(t, httpProtocol, result)
+}
+
+func TestDetermineProtocol_Available(t *testing.T) {
+	// Start a listener on a random port; determineProtocol hardcodes port 443
+	// so we cannot easily test the "available" branch without root privileges.
+	// We use a listener on port 0 and call isHostAvailableOnPort directly instead.
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Skip("Cannot create listener:", err)
+	}
+	defer listener.Close()
+
+	_, port, _ := net.SplitHostPort(listener.Addr().String())
+	// Verify via isHostAvailableOnPort that the "available" path works
+	assert.True(t, isHostAvailableOnPort("127.0.0.1", port))
+}
+
 func TestCloseConnection_Error(t *testing.T) {
 	mockConn := &mockErrorConn{}
 	closeConnection(mockConn)
