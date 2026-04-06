@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"net"
 	"strconv"
 	"time"
@@ -25,7 +24,7 @@ type clientConfig struct {
 
 // Client holds a connection to a RouterOS device.
 type Client struct {
-	conn   io.ReadWriteCloser
+	conn   net.Conn
 	reader *proto.Reader
 	writer *proto.Writer
 }
@@ -64,7 +63,7 @@ func resolveAddress(address string, useTLS bool) string {
 }
 
 // newClientFromConn creates a Client from an existing connection (for testing).
-func newClientFromConn(conn io.ReadWriteCloser, username, password string) *Client {
+func newClientFromConn(conn net.Conn) *Client {
 	return &Client{
 		conn:   conn,
 		reader: proto.NewReader(conn),
@@ -240,6 +239,25 @@ func (c *Client) readReply() (*Reply, error) {
 // execute sends a command and reads the reply.
 func (c *Client) execute(ctx context.Context, command string, params map[string]string, opts ...RequestOption) (*Reply, error) {
 	reqOpts := collectRequestOptions(opts...)
+
+	// Set deadline from context if present
+	if deadline, ok := ctx.Deadline(); ok {
+		c.conn.SetDeadline(deadline)
+		defer c.conn.SetDeadline(time.Time{}) // reset after request
+	}
+
+	// Handle context cancellation
+	if ctx.Done() != nil {
+		done := make(chan struct{})
+		defer close(done)
+		go func() {
+			select {
+			case <-ctx.Done():
+				c.conn.SetDeadline(time.Now()) // force timeout
+			case <-done:
+			}
+		}()
+	}
 
 	if err := c.sendCommand(command, params, reqOpts); err != nil {
 		return nil, fmt.Errorf("routeros: send: %w", err)

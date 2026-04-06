@@ -67,7 +67,7 @@ func TestDial_PostV643(t *testing.T) {
 
 	go srv.handleLogin()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "")
 	require.NoError(t, err)
 	client.Close()
@@ -79,7 +79,7 @@ func TestDial_PreV643(t *testing.T) {
 
 	go srv.handleLoginLegacy("abcdef0123456789")
 
-	client := newClientFromConn(clientConn, "admin", "secret")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "secret")
 	require.NoError(t, err)
 	client.Close()
@@ -95,7 +95,7 @@ func TestDial_LoginFailure(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "wrong")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "wrong")
 	require.Error(t, err)
 
@@ -110,7 +110,7 @@ func TestClient_Close(t *testing.T) {
 	srv, clientConn := newMockServer(t)
 	defer srv.close()
 
-	client := newClientFromConn(clientConn, "", "")
+	client := newClientFromConn(clientConn)
 	err := client.Close()
 	assert.NoError(t, err)
 }
@@ -128,7 +128,7 @@ func TestClient_Print(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	reply, err := client.Print(context.Background(), "/ip/address")
@@ -154,7 +154,7 @@ func TestClient_Print_WithProplist(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	reply, err := client.Print(context.Background(), "/ip/address",
@@ -176,7 +176,7 @@ func TestClient_Print_WithQuery(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	reply, err := client.Print(context.Background(), "/interface",
@@ -202,7 +202,7 @@ func TestClient_Add(t *testing.T) {
 		srv.writeSentence("!done", "=ret=*A")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	reply, err := client.Add(context.Background(), "/ip/address", map[string]string{
@@ -229,7 +229,7 @@ func TestClient_Set(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	_, err := client.Set(context.Background(), "/ip/address", map[string]string{
@@ -254,7 +254,7 @@ func TestClient_Remove(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	_, err := client.Remove(context.Background(), "/ip/address", "*1")
@@ -275,7 +275,7 @@ func TestClient_Run(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	_, err := client.Run(context.Background(), "/system/reboot", nil)
@@ -295,7 +295,7 @@ func TestClient_TrapError(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	_, err := client.Print(context.Background(), "/nonexistent")
@@ -318,7 +318,7 @@ func TestClient_FatalError(t *testing.T) {
 		srv.writeSentence("!fatal", "=message=session terminated")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	_, err := client.Print(context.Background(), "/ip/address")
@@ -341,7 +341,7 @@ func TestClient_Auth(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	reply, err := client.Auth(context.Background())
@@ -465,7 +465,7 @@ func TestLogin_FatalError(t *testing.T) {
 		srv.writeSentence("!fatal", "=message=too many sessions")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "")
 	require.Error(t, err)
 	_, ok := err.(*FatalError)
@@ -478,7 +478,7 @@ func TestLogin_WriteError(t *testing.T) {
 	clientConn.Close()
 	srv.close()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "login write")
@@ -493,7 +493,7 @@ func TestLogin_ReadError(t *testing.T) {
 		srv.close()
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "login read")
@@ -509,7 +509,7 @@ func TestLoginLegacy_InvalidHexChallenge(t *testing.T) {
 		srv.writeSentence("!done", "=ret=ZZZZ_not_hex")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "secret")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "secret")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "decode challenge")
@@ -529,7 +529,7 @@ func TestLoginLegacy_FatalError(t *testing.T) {
 		srv.writeSentence("!fatal", "=message=session limit reached")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "secret")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "secret")
 	require.Error(t, err)
 	_, ok := err.(*FatalError)
@@ -548,7 +548,7 @@ func TestLoginLegacy_TrapError(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "secret")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "secret")
 	require.Error(t, err)
 	de, ok := err.(*DeviceError)
@@ -567,7 +567,7 @@ func TestLoginLegacy_WriteError(t *testing.T) {
 		srv.close()
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "secret")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "secret")
 	require.Error(t, err)
 }
@@ -583,7 +583,7 @@ func TestLoginLegacy_ReadError(t *testing.T) {
 		srv.close()
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "secret")
+	client := newClientFromConn(clientConn)
 	err := client.login("admin", "secret")
 	require.Error(t, err)
 }
@@ -596,7 +596,7 @@ func TestExecute_SendCommandError(t *testing.T) {
 		srv.close()
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	// Wait for server to close
@@ -617,7 +617,7 @@ func TestReadReply_ReadError(t *testing.T) {
 		srv.close()
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	_, err := client.Print(context.Background(), "/ip/address")
@@ -684,7 +684,7 @@ func TestClient_EmptyReply(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	reply, err := client.Print(context.Background(), "/ip/address")
@@ -707,12 +707,58 @@ func TestClient_EmptyReply_V718(t *testing.T) {
 		srv.writeSentence("!done")
 	}()
 
-	client := newClientFromConn(clientConn, "admin", "")
+	client := newClientFromConn(clientConn)
 	require.NoError(t, client.login("admin", ""))
 
 	reply, err := client.Print(context.Background(), "/ip/address")
 	require.NoError(t, err)
 	assert.Empty(t, reply.Re)
 	assert.NotNil(t, reply.Done)
+	client.Close()
+}
+
+func TestClient_ContextCancel(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+
+	go func() {
+		defer srv.close()
+		srv.handleLogin()
+		// Don't respond — simulate a hanging request
+		// The context cancel should unblock the client
+	}()
+
+	client := newClientFromConn(clientConn)
+	require.NoError(t, client.login("admin", ""))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	_, err := client.Print(ctx, "/ip/address")
+	require.Error(t, err)
+	client.Close()
+}
+
+func TestClient_ContextDeadline(t *testing.T) {
+	srv, clientConn := newMockServer(t)
+
+	go func() {
+		defer srv.close()
+		srv.handleLogin()
+
+		srv.readSentence()
+		// Respond normally
+		srv.writeSentence("!re", "=.id=*1")
+		srv.writeSentence("!done")
+	}()
+
+	client := newClientFromConn(clientConn)
+	require.NoError(t, client.login("admin", ""))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	reply, err := client.Print(ctx, "/ip/address")
+	require.NoError(t, err)
+	assert.Len(t, reply.Re, 1)
 	client.Close()
 }
