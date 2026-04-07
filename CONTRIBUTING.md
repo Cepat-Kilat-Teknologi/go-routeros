@@ -41,7 +41,7 @@ make check
 ### Code Standards
 
 - **100% test coverage** is required for all packages
-- **golint/golangci-lint** must pass with no issues
+- **golangci-lint v2** must pass with no issues (config in `.golangci.yml`)
 - **Comments** must be in US English, following godoc conventions
 - Every exported type, function, and method must have a doc comment starting with its name
 - Follow existing code patterns and naming conventions
@@ -71,11 +71,12 @@ refactor(api/proto): simplify length encoding
 
 ```
 go-routeros/
-├── rest/           # REST API client (v7)
-├── api/            # API Protocol client (v6 & v7)
-│   └── proto/      # Wire protocol encoding
-├── example/        # Usage examples
-└── .github/        # CI and templates
+├── rest/           # REST API client (v7, HTTP/HTTPS)
+├── api/            # API Protocol client (v6 & v7, TCP/TLS)
+│   └── proto/      # Wire protocol binary encoding
+├── example/        # Usage examples (api + rest)
+├── docs/           # Detailed documentation (REST_API, API_PROTOCOL, TLS_SETUP, MIGRATION)
+└── .github/        # CI workflows, issue/PR templates, Dependabot
 ```
 
 ## Integration Testing
@@ -112,7 +113,7 @@ go run ./example/rest/query/
 
 ### TLS Testing
 
-To test TLS connections, certificates must be configured on the router. See the [TLS/SSL Certificate Setup](README.md#tlsssl-certificate-setup-routeros) section in README for step-by-step instructions.
+To test TLS connections, certificates must be configured on the router. See the [TLS/SSL Setup Guide](docs/TLS_SETUP.md) for step-by-step instructions.
 
 ### Verified Platforms
 

@@ -225,3 +225,27 @@ RouterOS returns structured JSON errors:
 | `WithProplist("a", "b")` | GET, POST | Limit returned properties |
 | `WithQuery("k=v", "#\|")` | POST only | Complex stack-based filtering |
 | `WithFilter(map[string]string{...})` | GET only | URL query parameter filtering |
+
+## Decoding Responses
+
+REST API methods return `interface{}`. Use `rest.Decode()` to convert responses into typed structs:
+
+```go
+type IPAddress struct {
+    ID        string `json:".id"`
+    Address   string `json:"address"`
+    Interface string `json:"interface"`
+}
+
+result, err := client.Print(ctx, "ip/address")
+
+// Decode into a slice of typed structs
+var addresses []IPAddress
+err = rest.Decode(result, &addresses)
+
+for _, addr := range addresses {
+    fmt.Printf("[%s] %s on %s\n", addr.ID, addr.Address, addr.Interface)
+}
+```
+
+This eliminates the manual `json.Marshal` / `json.Unmarshal` pattern.
