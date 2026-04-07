@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-07
+
+### Added
+
+#### TLS/SSL Documentation
+- Complete TLS/SSL certificate setup guide in README (CA generation, server cert, service assignment)
+- Go code examples for TLS connections (API Protocol and REST API)
+- Security best practices: IP restriction, disabling plaintext services, CA export for client trust
+- ECDSA certificate alternative for RouterOS v7
+
+#### Integration Testing
+- Verified all examples against real RouterOS devices:
+  - **RouterOS 7.15 (stable)** — CHR x86_64: API, API-SSL, REST HTTP, REST HTTPS
+  - **RouterOS 6.49.19 (long-term)** — x86: API, API-SSL
+- Confirmed identical output format between v6 and v7
+
+### Fixed
+- **REST client**: handle HTTP 204 No Content on DELETE — RouterOS returns empty body on successful delete, which caused `EOF` error in `decodeJSONBody`
+
+### Changed
+- Bump `actions/checkout` from v4 to v6
+- Bump `actions/setup-go` from v5 to v6
+- Bump `github.com/stretchr/testify` from v1.8.4 to v1.11.1
+
+---
+
 ## [0.1.0] - 2026-04-07
 
 ### Added

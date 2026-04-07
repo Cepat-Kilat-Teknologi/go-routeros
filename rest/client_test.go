@@ -184,6 +184,19 @@ func TestClient_Remove(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestClient_Remove_NoContent(t *testing.T) {
+	server := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "DELETE", r.Method)
+		w.WriteHeader(http.StatusNoContent)
+	})
+	defer server.Close()
+
+	c := NewClient(server.URL, "admin", "")
+	result, err := c.Remove(context.Background(), "ip/address/*1")
+	require.NoError(t, err)
+	assert.Nil(t, result)
+}
+
 func TestClient_Run(t *testing.T) {
 	server := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "POST", r.Method)
@@ -334,6 +347,59 @@ func TestClient_Execute_SendRequestError(t *testing.T) {
 	c := NewClient("http://127.0.0.1:1", "admin", "")
 	_, err := c.execute(context.Background(), MethodGet, "test", nil)
 	require.Error(t, err)
+}
+
+func TestDecode_Struct(t *testing.T) {
+	src := map[string]interface{}{
+		"address":   "10.0.0.1/24",
+		"interface": "ether1",
+	}
+	var dst struct {
+		Address   string `json:"address"`
+		Interface string `json:"interface"`
+	}
+	err := Decode(src, &dst)
+	require.NoError(t, err)
+	assert.Equal(t, "10.0.0.1/24", dst.Address)
+	assert.Equal(t, "ether1", dst.Interface)
+}
+
+func TestDecode_Slice(t *testing.T) {
+	src := []interface{}{
+		map[string]interface{}{"name": "ether1"},
+		map[string]interface{}{"name": "ether2"},
+	}
+	var dst []struct {
+		Name string `json:"name"`
+	}
+	err := Decode(src, &dst)
+	require.NoError(t, err)
+	assert.Len(t, dst, 2)
+	assert.Equal(t, "ether1", dst[0].Name)
+}
+
+func TestDecode_Nil(t *testing.T) {
+	var dst struct{}
+	err := Decode(nil, &dst)
+	require.NoError(t, err)
+}
+
+func TestDecode_InvalidDst(t *testing.T) {
+	src := map[string]interface{}{"key": "value"}
+	// Decode into a non-pointer to trigger unmarshal error
+	var dst int
+	err := Decode(src, &dst)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "rest: decode response")
+}
+
+func TestDecode_MarshalError(t *testing.T) {
+	// channels cannot be marshaled to JSON
+	src := make(chan int)
+	var dst struct{}
+	err := Decode(src, &dst)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "rest: encode response")
 }
 
 func TestClient_cleanHost(t *testing.T) {

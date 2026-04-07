@@ -717,6 +717,33 @@ func TestClient_EmptyReply_V718(t *testing.T) {
 	client.Close()
 }
 
+func TestDial_LoginTimeout(t *testing.T) {
+	// Start a TCP server that accepts but never responds to login
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer ln.Close()
+
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		// Read login sentence but never respond — simulate a hanging login
+		r := proto.NewReader(conn)
+		r.ReadSentence()
+		time.Sleep(5 * time.Second)
+	}()
+
+	start := time.Now()
+	_, err = Dial(ln.Addr().String(), "admin", "", WithTimeout(200*time.Millisecond))
+	elapsed := time.Since(start)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "login read")
+	assert.Less(t, elapsed, 2*time.Second, "login should timeout quickly")
+}
+
 func TestClient_ContextCancel(t *testing.T) {
 	srv, clientConn := newMockServer(t)
 
@@ -762,4 +789,3 @@ func TestClient_ContextDeadline(t *testing.T) {
 	assert.Len(t, reply.Re, 1)
 	client.Close()
 }
-

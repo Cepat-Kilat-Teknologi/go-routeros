@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -205,7 +204,7 @@ func TestParseURL_ControlCharacter(t *testing.T) {
 	_ = err
 }
 
-func TestRetryTlsErrorRequest(t *testing.T) {
+func TestRetryTLSErrorRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"status":"ok"}`)
@@ -219,7 +218,7 @@ func TestRetryTlsErrorRequest(t *testing.T) {
 		URL:    server.URL,
 		Method: "GET",
 	}
-	resp, err := retryTlsErrorRequest(server.Client(), req, config)
+	resp, err := retryTLSErrorRequest(server.Client(), req, config)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -291,12 +290,4 @@ func (t *tlsRetryRoundTripper) RoundTrip(req *http.Request) (*http.Response, err
 	}
 	// For http, delegate to the default transport targeting our test server
 	return http.DefaultTransport.RoundTrip(req)
-}
-
-func mustParseURL(rawURL string) *url.URL {
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		panic(err)
-	}
-	return parsedURL
 }

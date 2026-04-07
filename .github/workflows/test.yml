@@ -13,8 +13,8 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: ['1.21', '1.22', '1.23']
-        os: [ubuntu-latest, macos-latest]
+        go-version: ['1.21', '1.22', '1.23', '1.24']
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -27,11 +27,38 @@ jobs:
         run: go build ./...
 
       - name: Test
-        run: go test ./... -v -race -coverprofile=coverage.out -covermode=atomic
+        run: go test ./api/... ./api/proto/... ./rest/... -v -race -coverprofile=coverage.out -covermode=atomic
 
       - name: Vet
         run: go vet ./...
 
-      - name: Coverage
+      - name: Verify Dependencies
+        run: go mod verify
+
+      - name: Coverage Check
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
-          go tool cover -func=coverage.out | tail -1
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${COVERAGE}%"
+          if [ "$(echo "$COVERAGE < 100.0" | bc -l)" -eq 1 ]; then
+            echo "::error::Coverage ${COVERAGE}% is below 100%"
+            exit 1
+          fi
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+
+      - name: Install golangci-lint v2
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: golangci-lint
+        run: golangci-lint run ./...

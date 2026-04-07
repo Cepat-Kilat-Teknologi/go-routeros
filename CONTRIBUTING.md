@@ -78,6 +78,49 @@ go-routeros/
 └── .github/        # CI and templates
 ```
 
+## Integration Testing
+
+Unit tests run against mock servers and achieve 100% coverage. For integration testing against real RouterOS devices:
+
+### Prerequisites
+
+- RouterOS v7 device (for REST API + API Protocol testing)
+- RouterOS v6 device (for API Protocol backward-compatibility testing)
+- API service enabled on both devices (`/ip service enable api`)
+
+### Running Examples
+
+Update credentials in the example files, then run:
+
+```bash
+# API Protocol examples (works on v6 & v7)
+go run ./example/api/basic/
+go run ./example/api/proplist/
+go run ./example/api/query/
+go run ./example/api/set/
+go run ./example/api/error-handling/
+
+# API Protocol with TLS (requires certificate setup, see README)
+go run ./example/api/tls/
+
+# REST API examples (v7 only)
+go run ./example/rest/basic/
+go run ./example/rest/proplist/
+go run ./example/rest/filter/
+go run ./example/rest/query/
+```
+
+### TLS Testing
+
+To test TLS connections, certificates must be configured on the router. See the [TLS/SSL Certificate Setup](README.md#tlsssl-certificate-setup-routeros) section in README for step-by-step instructions.
+
+### Verified Platforms
+
+| RouterOS | Version | API | API-SSL | REST | REST HTTPS |
+|----------|---------|:---:|:-------:|:----:|:----------:|
+| v7 | 7.15 (stable) | Yes | Yes | Yes | Yes |
+| v6 | 6.49.19 (long-term) | Yes | Yes | N/A | N/A |
+
 ## Questions?
 
 Open a [Discussion](https://github.com/Cepat-Kilat-Teknologi/go-routeros/discussions) for questions or ideas.

@@ -1,22 +1,40 @@
+version: "2"
+
 run:
   timeout: 5m
   go: "1.21"
 
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    paths:
+      - example
+
 linters:
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
     - gocritic
-    - gofmt
-    - goimports
     - misspell
     - unconvert
     - unparam
     - revive
+  exclusions:
+    paths:
+      - example
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - revive
+      - text: "routeros"
+        linters:
+          - misspell
 
 linters-settings:
   revive:
@@ -37,7 +55,3 @@ linters-settings:
     enabled-tags:
       - diagnostic
       - style
-
-issues:
-  exclude-dirs:
-    - example

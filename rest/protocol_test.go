@@ -38,19 +38,19 @@ func TestIsHostAvailableOnPort_Available(t *testing.T) {
 	assert.True(t, available)
 }
 
-func TestShouldRetryTlsErrorRequest_HTTP(t *testing.T) {
+func TestShouldRetryTLSErrorRequest_HTTP(t *testing.T) {
 	err := errors.New("tls: handshake failure")
-	assert.False(t, shouldRetryTlsErrorRequest(err, httpProtocol))
+	assert.False(t, shouldRetryTLSErrorRequest(err, httpProtocol))
 }
 
-func TestShouldRetryTlsErrorRequest_HTTPS(t *testing.T) {
+func TestShouldRetryTLSErrorRequest_HTTPS(t *testing.T) {
 	err := errors.New("tls: handshake failure")
-	assert.True(t, shouldRetryTlsErrorRequest(err, httpsProtocol))
+	assert.True(t, shouldRetryTLSErrorRequest(err, httpsProtocol))
 }
 
-func TestShouldRetryTlsErrorRequest_NonTLSError(t *testing.T) {
+func TestShouldRetryTLSErrorRequest_NonTLSError(t *testing.T) {
 	err := errors.New("connection refused")
-	assert.False(t, shouldRetryTlsErrorRequest(err, httpsProtocol))
+	assert.False(t, shouldRetryTLSErrorRequest(err, httpsProtocol))
 }
 
 func TestDetermineProtocolFromURL_HTTP(t *testing.T) {
