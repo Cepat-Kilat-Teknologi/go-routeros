@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/Cepat-Kilat-Teknologi/go-routeros.svg)](https://pkg.go.dev/github.com/Cepat-Kilat-Teknologi/go-routeros)
 [![Test](https://github.com/Cepat-Kilat-Teknologi/go-routeros/actions/workflows/test.yml/badge.svg)](https://github.com/Cepat-Kilat-Teknologi/go-routeros/actions)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/Cepat-Kilat-Teknologi/go-routeros)
+[![codecov](https://codecov.io/gh/Cepat-Kilat-Teknologi/go-routeros/graph/badge.svg)](https://codecov.io/gh/Cepat-Kilat-Teknologi/go-routeros)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Cepat-Kilat-Teknologi/go-routeros)](https://goreportcard.com/report/github.com/Cepat-Kilat-Teknologi/go-routeros)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
