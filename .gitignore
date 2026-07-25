@@ -1,2 +1,18 @@
 coverage.out
 .superpowers/
+
+# Environment files (safety net)
+.env
+.env.*
+!.env.example
+
+# AI assistant tooling — local only, never committed
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.mcp.json
+.cursor/
+.cursorrules
+.aider*
+.omc/
