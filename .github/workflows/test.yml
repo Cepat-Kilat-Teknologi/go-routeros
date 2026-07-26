@@ -15,16 +15,18 @@ jobs:
       matrix:
         go-version: ['1.21', '1.22', '1.23', '1.24']
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # Older Go toolchains link Mach-O binaries without an LC_UUID load
-        # command, which the dyld on current macos-latest runners rejects
-        # outright: "missing LC_UUID load command" then SIGABRT before any
-        # test runs. Which cell trips it moves between runs because the
-        # macos-latest image is being rolled out gradually — 1.21 failed one
-        # run, 1.22 the next — so pin every pre-1.24 toolchain to the older
-        # image rather than chasing whichever cell happens to fail.
+        # Go 1.21-1.23 link Mach-O binaries without an LC_UUID load command,
+        # which the dyld on current macos-latest runners rejects outright:
+        # "missing LC_UUID load command" then SIGABRT before any test runs.
+        # Only 1.24 produces binaries those runners will load.
         #
-        # go.mod declares 1.21 as the supported floor, so these cells stay
-        # covered; only the runner image changes.
+        # There is no older macOS image to fall back to — macos-13 was the
+        # last Intel one and its label no longer gets a runner, so pinning
+        # these cells there just leaves them queued indefinitely.
+        #
+        # Drop the macOS cells for those toolchains instead. 1.21-1.23 stay
+        # covered on ubuntu-latest and windows-latest, so the floor declared
+        # in go.mod is still tested — just not on macOS.
         exclude:
           - go-version: '1.21'
             os: macos-latest
@@ -32,13 +34,6 @@ jobs:
             os: macos-latest
           - go-version: '1.23'
             os: macos-latest
-        include:
-          - go-version: '1.21'
-            os: macos-13
-          - go-version: '1.22'
-            os: macos-13
-          - go-version: '1.23'
-            os: macos-13
     runs-on: ${{ matrix.os }}
     environment: ci
     steps:
