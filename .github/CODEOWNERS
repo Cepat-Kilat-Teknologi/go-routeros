@@ -1,0 +1,8 @@
+# Default owner for everything
+* @sumitroajiprabowo
+
+# RouterOS API client library
+/*.go                   @sumitroajiprabowo
+
+# CI/CD and tooling
+/.github/               @sumitroajiprabowo
