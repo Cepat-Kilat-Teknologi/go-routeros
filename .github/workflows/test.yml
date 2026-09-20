@@ -13,27 +13,8 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: ['1.21', '1.22', '1.23', '1.24']
+        go-version: ['1.24', '1.25', '1.26']
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # Go 1.21-1.23 link Mach-O binaries without an LC_UUID load command,
-        # which the dyld on current macos-latest runners rejects outright:
-        # "missing LC_UUID load command" then SIGABRT before any test runs.
-        # Only 1.24 produces binaries those runners will load.
-        #
-        # There is no older macOS image to fall back to — macos-13 was the
-        # last Intel one and its label no longer gets a runner, so pinning
-        # these cells there just leaves them queued indefinitely.
-        #
-        # Drop the macOS cells for those toolchains instead. 1.21-1.23 stay
-        # covered on ubuntu-latest and windows-latest, so the floor declared
-        # in go.mod is still tested — just not on macOS.
-        exclude:
-          - go-version: '1.21'
-            os: macos-latest
-          - go-version: '1.22'
-            os: macos-latest
-          - go-version: '1.23'
-            os: macos-latest
     runs-on: ${{ matrix.os }}
     environment: ci
     steps:
@@ -67,7 +48,7 @@ jobs:
           fi
 
       - name: Upload coverage reports to Codecov
-        if: matrix.go-version == '1.24' && matrix.os == 'ubuntu-latest'
+        if: matrix.go-version == '1.26' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -83,7 +64,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.24'
+          go-version: '1.26'
 
       - name: Install golangci-lint v2
         run: |
