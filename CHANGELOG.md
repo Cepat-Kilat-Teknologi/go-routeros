@@ -10,29 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### New Features
-- `rest.Decode()` helper for typed response unmarshaling — eliminates manual JSON re-encode/decode pattern
-- Login timeout for API Protocol — prevents hanging on unresponsive routers when `WithTimeout` is set
+- `rest.Decode()` helper for typed response unmarshaling, eliminates manual JSON re-encode/decode pattern
+- Login timeout for API Protocol: prevents hanging on unresponsive routers when `WithTimeout` is set
 
 #### TLS/SSL Documentation
-- Complete TLS/SSL certificate setup guide (`docs/TLS_SETUP.md`) — CA generation, server cert, service assignment
+- Complete TLS/SSL certificate setup guide (`docs/TLS_SETUP.md`), CA generation, server cert, service assignment
 - Go code examples for TLS connections (API Protocol and REST API)
 - Security best practices: IP restriction, disabling plaintext services, CA export for client trust
 - ECDSA certificate alternative for RouterOS v7
 
 #### Documentation
-- Split README from 868 to 231 lines — detailed docs moved to `docs/` directory
-- `docs/REST_API.md` — full REST API reference
-- `docs/API_PROTOCOL.md` — full API Protocol reference
-- `docs/TLS_SETUP.md` — RouterOS certificate setup guide
-- `docs/MIGRATION.md` — migration guide from routerosv7-restfull-api
+- Split README from 868 to 231 lines, detailed docs moved to `docs/` directory
+- `docs/REST_API.md`: full REST API reference
+- `docs/API_PROTOCOL.md`: full API Protocol reference
+- `docs/TLS_SETUP.md`: RouterOS certificate setup guide
+- `docs/MIGRATION.md`: migration guide from routerosv7-restfull-api
 - Comprehensive inline code comments on all 14 source files (English US)
 - Updated CONTRIBUTING.md with integration testing section
 - Updated SECURITY.md with TLS best practices
 
 #### Integration Testing
 - Verified all examples against real RouterOS devices:
-  - **RouterOS 7.15 (stable)** — CHR x86_64: API, API-SSL, REST HTTP, REST HTTPS
-  - **RouterOS 6.49.19 (long-term)** — x86: API, API-SSL
+  - **RouterOS 7.15 (stable)**: CHR x86_64: API, API-SSL, REST HTTP, REST HTTPS
+  - **RouterOS 6.49.19 (long-term)**: x86: API, API-SSL
 - Confirmed identical output format between v6 and v7
 
 #### CI/CD
@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `go mod verify` dependency audit step
 
 ### Fixed
-- **REST client**: handle HTTP 204 No Content on DELETE — RouterOS returns empty body on successful delete, which caused `EOF` error in `decodeJSONBody`
+- **REST client**: handle HTTP 204 No Content on DELETE, RouterOS returns empty body on successful delete, which caused `EOF` error in `decodeJSONBody`
 - **REST client**: rename `shouldRetryTlsErrorRequest` → `shouldRetryTLSErrorRequest` for idiomatic Go naming
 - **API client**: suppress `errcheck` warnings on `SetDeadline` and `ReadSentence` calls
 - **proto/writer**: suppress `errcheck` warnings on buffered write operations

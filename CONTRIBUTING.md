@@ -64,7 +64,7 @@ refactor(api/proto): simplify length encoding
 1. Ensure all tests pass: `make check`
 2. Update documentation if needed
 3. Add tests for new functionality (100% coverage required)
-4. Keep PRs focused — one feature or fix per PR
+4. Keep PRs focused: one feature or fix per PR
 5. Fill out the PR template
 
 ## Project Structure

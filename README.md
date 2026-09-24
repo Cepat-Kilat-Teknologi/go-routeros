@@ -13,7 +13,7 @@ Go client library for [MikroTik RouterOS](https://mikrotik.com/). Supports both 
 | RouterOS | Version | API (8728) | API-SSL (8729) | REST HTTP (80) | REST HTTPS (443) |
 |----------|---------|:----------:|:--------------:|:--------------:|:----------------:|
 | **v7** | 7.15 (stable) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| **v6** | 6.49.19 (long-term) | :white_check_mark: | :white_check_mark: | — | — |
+| **v6** | 6.49.19 (long-term) | :white_check_mark: | :white_check_mark: | - | - |
 
 ## Install
 
@@ -209,9 +209,9 @@ go-routeros/
 
 | Document | Description |
 |---|---|
-| [docs/REST_API.md](docs/REST_API.md) | Full REST API reference — client options, CRUD, queries, error handling |
-| [docs/API_PROTOCOL.md](docs/API_PROTOCOL.md) | Full API Protocol reference — dial options, queries, replies, auth |
-| [docs/TLS_SETUP.md](docs/TLS_SETUP.md) | RouterOS certificate setup guide — CA, server cert, service config |
+| [docs/REST_API.md](docs/REST_API.md) | Full REST API reference: client options, CRUD, queries, error handling |
+| [docs/API_PROTOCOL.md](docs/API_PROTOCOL.md) | Full API Protocol reference: dial options, queries, replies, auth |
+| [docs/TLS_SETUP.md](docs/TLS_SETUP.md) | RouterOS certificate setup guide: CA, server cert, service config |
 | [docs/MIGRATION.md](docs/MIGRATION.md) | Migration guide from routerosv7-restfull-api |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines and integration testing |

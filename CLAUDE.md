@@ -19,7 +19,7 @@ Go 1.26+ · stdlib only · no external dependencies
 - **RouterOS v7, advanced** → use `api` (query filtering, future streaming)
 
 Both packages share design patterns (functional options, typed errors, context
-support) — switching between them is straightforward.
+support): switching between them is straightforward.
 
 ## Build & Test
 
@@ -52,5 +52,5 @@ import "github.com/Cepat-Kilat-Teknologi/go-routeros/rest"
 
 - Conventional Commits, English: `feat(rest): add batch command support`
 - No `Co-Authored-By` trailers
-- Library — no env vars, no HTTP server, no `.env` files
+- Library: no env vars, no HTTP server, no `.env` files
 - Tested on RouterOS v7.15 (stable) and v6.49.19 (long-term)
