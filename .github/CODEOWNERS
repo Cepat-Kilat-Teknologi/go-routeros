@@ -1,8 +1,9 @@
-# Default owner for everything
-* @sumitroajiprabowo
+# Code owners — every pull request needs a review from a code owner.
+# Workplan W2.5 / ADR-015. Owners must be a team (or user) with write access;
+# a bare org handle such as @Cepat-Kilat-Teknologi is silently ignored by GitHub.
+# Split into per-division teams (backend, frontend, devops) as they are staffed.
 
-# RouterOS API client library
-/*.go                   @sumitroajiprabowo
+*                   @cepat-kilat-teknologi/engineering
 
-# CI/CD and tooling
-/.github/               @sumitroajiprabowo
+/*.go               @cepat-kilat-teknologi/engineering
+/.github/           @cepat-kilat-teknologi/engineering
