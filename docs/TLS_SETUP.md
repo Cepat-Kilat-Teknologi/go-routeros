@@ -3,8 +3,8 @@
 Both the `api` package (port 8729) and `rest` package (port 443) support TLS-encrypted connections. RouterOS requires a certificate to be configured on the router before TLS services will work.
 
 This guide has been tested on:
-- **RouterOS 7.15 (stable)** — CHR x86_64
-- **RouterOS 6.49.19 (long-term)** — x86
+- **RouterOS 7.15 (stable)**: CHR x86_64
+- **RouterOS 6.49.19 (long-term)**: x86
 
 ## Step 1: Generate a Self-Signed CA Certificate
 

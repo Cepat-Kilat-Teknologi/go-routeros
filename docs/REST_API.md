@@ -130,9 +130,9 @@ result, err := client.Run(ctx, "interface/print", nil,
 ```
 
 Query operators:
-- `#|` — OR (pop two values, push result)
-- `#!` — NOT (pop one value, push result)
-- `#&` — AND (implicit, pop two values, push result)
+- `#|`: OR (pop two values, push result)
+- `#!`: NOT (pop one value, push result)
+- `#&`: AND (implicit, pop two values, push result)
 
 ## Creating Records (Add)
 

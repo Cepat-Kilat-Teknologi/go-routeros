@@ -232,7 +232,7 @@ for _, re := range reply.Re {
 
 The API Protocol has two error types:
 
-**`*api.DeviceError`** — returned when RouterOS sends a `!trap` response:
+**`*api.DeviceError`**: returned when RouterOS sends a `!trap` response:
 
 ```go
 reply, err := client.Print(ctx, "/ip/address")
@@ -258,7 +258,7 @@ Trap categories:
 | 6 | TTY-related failure |
 | 7 | Value from `:return` |
 
-**`*api.FatalError`** — returned when RouterOS sends a `!fatal` response. The connection is closed by the router:
+**`*api.FatalError`**: returned when RouterOS sends a `!fatal` response. The connection is closed by the router:
 
 ```go
 if fe, ok := err.(*api.FatalError); ok {
@@ -326,7 +326,7 @@ fmt.Printf("Found %d records\n", len(reply.Re))
 
 `api.Dial` handles authentication automatically. It supports both methods:
 
-- **Post-6.43 (plaintext)** — Used by all modern RouterOS. Sends username and password directly.
-- **Pre-6.43 (MD5 challenge-response)** — Auto-detected. If the router responds with a challenge, the library computes the MD5 response automatically.
+- **Post-6.43 (plaintext)**: Used by all modern RouterOS. Sends username and password directly.
+- **Pre-6.43 (MD5 challenge-response)**: Auto-detected. If the router responds with a challenge, the library computes the MD5 response automatically.
 
-No configuration needed — just pass username and password to `Dial`.
+No configuration needed: just pass username and password to `Dial`.
