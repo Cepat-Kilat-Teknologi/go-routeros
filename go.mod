@@ -1,6 +1,6 @@
 module github.com/Cepat-Kilat-Teknologi/go-routeros
 
-go 1.26
+go 1.26.11
 
 require github.com/stretchr/testify v1.12.1
 
